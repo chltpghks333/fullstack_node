@@ -1,6 +1,19 @@
 const express = require('express')
+const morgan = require('morgan')
+
 const app = express()
 app.use(express.json())
+morgan.token('req-content', function(req, res) {return JSON.stringify(req.body)})
+const postLogger = morgan(':method :url :status :res[content-length] - '+
+':response-time ms :req-content'
+    , {skip: function(req, res) { return req.method !== 'POST' }}
+)
+const generalLogger = morgan('tiny', 
+    {skip: function(req, res) { return req.method === 'POST' } }
+)
+
+app.use(postLogger)
+app.use(generalLogger)
 
 let persons = [
     {
