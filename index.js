@@ -1,7 +1,8 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
-const mongoose = require('mongoose')
+const Person = require('./models/person')
 
 const app = express()
 app.use(express.json())
@@ -20,25 +21,6 @@ const generalLogger = morgan('tiny',
 app.use(postLogger)
 app.use(generalLogger)
 
-// build connection to mongo database
-const url =
-    `mongodb+srv://swanchoi:swanchoi@cluster0.9t5nt.mongodb.net/person_app?retryWrites=true&w=majority`
-
-mongoose.connect(url, {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true})
-
-// create a schema for the collection and a model that goes into the collection(people)
-const personSchema = new mongoose.Schema({
-    name: String,
-    number: String,
-})
-personSchema.set('toJSON', {
-    transform: (document, returnedObject) => {
-        returnedObject.id = returnedObject._id.toString()
-        delete returnedObject._id
-        delete returnedObject.__v
-    }
-})
-const Person = mongoose.model('Person', personSchema)
 
 app.get('/api/persons', (req, res) => {
     Person
@@ -104,7 +86,7 @@ app.post('/api/persons', (req, res) => {
     res.json(persons)
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`server running on ${PORT}`)
 })
