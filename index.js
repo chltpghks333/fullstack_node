@@ -20,17 +20,9 @@ const generalLogger = morgan('tiny',
 app.use(postLogger)
 app.use(generalLogger)
 
-
-if (process.argv.length < 3) {
-    console.log('Please provide all the required entries')
-    process.exit(1)
-}
-
-const password = process.argv[2]
-
 // build connection to mongo database
 const url =
-    `mongodb+srv://swanchoi:${password}@cluster0.9t5nt.mongodb.net/person_app?retryWrites=true&w=majority`
+    `mongodb+srv://swanchoi:swanchoi@cluster0.9t5nt.mongodb.net/person_app?retryWrites=true&w=majority`
 
 mongoose.connect(url, {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true})
 
@@ -39,9 +31,7 @@ const personSchema = new mongoose.Schema({
     name: String,
     number: String,
 })
-
 const Person = mongoose.model('Person', personSchema)
-
 
 app.get('/api/persons', (req, res) => {
     Person
