@@ -88,6 +88,7 @@ app.post('/api/persons', (req, res, next) => {
     const body = req.body
 
     if (!body.name) {
+        //using return to stop at this point
         return res.status(400).json({
             error: 'name field is missing'
         })
