@@ -28,30 +28,56 @@ app.get('/api/persons', (req, res) => {
         .then(persons => {
             res.json(persons)
         })
+        .catch(error => next(error))
 })
 
 app.get('/info', (req, res) => {
-    res.write(`Phonebook has info for ${persons.length} people\n\n`)
-    res.write(JSON.stringify(new Date()))
-    res.end()
+    Person
+        .find({})
+        .then(persons => {
+            res.write(`Phonebook has info for ${persons.length} people\n\n`)
+            res.write(JSON.stringify(new Date()))
+            res.end()
+        })
 })
 
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
+app.get('/api/persons/:id', (req, res, next) => {
+    Person.findById(req.params.id).then(person => {
+        if (person) {
+            res.json(person)
+        } else {
+            response.status(404).end()
+        }
+    })
+        .catch(error => next(error))
+})
 
-    if (!person) {
-        res.status(404).end()
-    } else {
-        res.json(person)
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({error: 'unknown endpoint'})
+}
+
+// handler of requests with unknown endpoint
+app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({error: 'malformatted id'})
     }
-})
+
+    next(error)
+}
+// handler of requests with result to errors
+app.use(errorHandler)
 
 app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(person => person.id !== id)
-    res.status(204).end()
-
+    const id = req.params.id
+    Person.findByIdAndRemove(id)
+        .then(result => {
+            res.status(204).end()
+        })
+    //.catch(error => next(error))
 })
 
 const generateId = () => {
@@ -71,19 +97,29 @@ app.post('/api/persons', (req, res) => {
             error: 'number field is missing'
         })
     }
-    const duplicate = persons.find(person => person.name === body.name)
-    if (duplicate) {
-        return res.status(400).json({
-            error: 'name must be unique'
-        })
-    }
-    const person = {
+    const person = new Person({
         id: generateId(),
         name: body.name,
         number: body.number
+    })
+    person.save().then(savedPerson => {
+        res.json(savedPerson)
+    })
+})
+
+app.put('/api/persons/:id', (req, res, next) => {
+    const id = req.params.id
+    const body = req.body
+    const person = {
+        name: body.name,
+        number: body.number
     }
-    persons = persons.concat(person)
-    res.json(persons)
+
+    Person.findByIdAndUpdate(id, person, {new: true})
+        .then(updatedPerson => {
+            res.json(updatedPerson)
+        })
+        .catch(error => next(error))
 })
 
 const PORT = process.env.PORT
