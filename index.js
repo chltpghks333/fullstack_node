@@ -52,12 +52,12 @@ app.get('/api/persons/:id', (req, res, next) => {
         .catch(error => next(error))
 })
 
-const unknownEndpoint = (request, response) => {
-    response.status(404).send({error: 'unknown endpoint'})
-}
+//const unknownEndpoint = (request, response) => {
+    //response.status(404).send({error: 'unknown endpoint'})
+//}
 
-// handler of requests with unknown endpoint
-app.use(unknownEndpoint)
+//// handler of requests with unknown endpoint
+//app.use(unknownEndpoint)
 
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
@@ -84,7 +84,7 @@ const generateId = () => {
     const id = Math.floor(Math.random() * 100)
     return id
 }
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
     const body = req.body
 
     if (!body.name) {
@@ -102,10 +102,25 @@ app.post('/api/persons', (req, res) => {
         name: body.name,
         number: body.number
     })
-    person.save().then(savedPerson => {
-        res.json(savedPerson)
-    })
+    person.save()
+        .then(savedPerson => {
+            res.json(savedPerson)
+        })
+        .catch(error => next(error))
 })
+const validationHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({error: 'malformatted id'})
+    } else if (error.name === 'ValidationError') {
+        return response.status(400).send({error: error.message})
+    }
+
+    next(error)
+}
+// handler of requests with result to errors
+app.use(validationHandler)
 
 app.put('/api/persons/:id', (req, res, next) => {
     const id = req.params.id
